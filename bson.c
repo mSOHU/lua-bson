@@ -355,7 +355,7 @@ append_one(struct bson *bs, lua_State *L, const char *key, size_t sz) {
 	case LUA_TSTRING: {
 		size_t len;
 		const char * str = lua_tolstring(L,-1,&len);
-		if (len > 1 && str[0]==0) {
+		if (len > 1 && str[0]==0 && str[1] != BSON_STRING) {
 			int subt = (uint8_t)str[1];
 			append_key(bs, subt, key, sz);
 			switch(subt) {
@@ -422,7 +422,7 @@ append_one(struct bson *bs, lua_State *L, const char *key, size_t sz) {
 			append_key(bs, BSON_STRING, key, sz);
 			int off = reserve_length(bs);
 			write_string(bs, str, len);
-			write_length(bs, len+1, off);		
+			write_length(bs, len+1, off);
 		}
 		break;
 	}
@@ -438,7 +438,7 @@ append_one(struct bson *bs, lua_State *L, const char *key, size_t sz) {
 	}
 }
 
-static inline int 
+static inline int
 bson_numstr( char *str, unsigned int i ) {
 	if ( i < MAX_NUMBER) {
 		memcpy( str, bson_numstrs[i], 4 );
@@ -509,7 +509,7 @@ pack_ordered_dict(lua_State *L, struct bson *b, int n) {
 	write_byte(b,0);
 	write_length(b, b->size - length, length);
 }
- 
+
 static int
 ltostring(lua_State *L) {
 	size_t sz = lua_rawlen(L, 1);
@@ -692,7 +692,7 @@ lmakeindex(lua_State *L) {
 		int field_size = 0;
 		switch (bt) {
 		case BSON_INT64:
-		case BSON_TIMESTAMP: 
+		case BSON_TIMESTAMP:
 		case BSON_DATE:
 		case BSON_REAL:
 			field_size = 8;
@@ -701,7 +701,7 @@ lmakeindex(lua_State *L) {
 			field_size = 1;
 			break;
 		case BSON_JSCODE:
-		case BSON_SYMBOL: 
+		case BSON_SYMBOL:
 		case BSON_STRING: {
 			int sz = read_int32(L, &br);
 			read_bytes(L, &br, sz);
@@ -1009,7 +1009,7 @@ lsubtype(lua_State *L, int subtype, const uint8_t * buf, size_t sz) {
 	switch(subtype) {
 	case BSON_STRING:
 		lua_pushvalue(L, lua_upvalueindex(5));
-		lua_pushlstring(L, (const char *)buf);
+		lua_pushlstring(L, (const char *)buf, sz);
 		return 2;
 	case BSON_BINARY:
 		lua_pushvalue(L, lua_upvalueindex(6));
@@ -1207,9 +1207,9 @@ lobjectid(lua_State *L) {
 		oid[4] = (ti>>8) & 0xff;
 		oid[5] = ti & 0xff;
 		memcpy(oid+6 , oid_header, 5);
-		oid[11] = (oid_counter>>16) & 0xff; 
-		oid[12] = (oid_counter>>8) & 0xff; 
-		oid[13] = oid_counter & 0xff; 
+		oid[11] = (oid_counter>>16) & 0xff;
+		oid[12] = (oid_counter>>8) & 0xff;
+		oid[13] = oid_counter & 0xff;
 		++oid_counter;
 	}
 	lua_pushlstring( L, (const char *)oid, 14);
