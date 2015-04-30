@@ -1,3 +1,8 @@
+## lua_ngx support
+
+* compatible with luajit-2.0 via https://github.com/keplerproject/lua-compat-5.2
+* wraps strings to avoid errors while calling cbson.type(string) if '\0' control byte in normal string
+
 ## Introduction
 
 This is a simple BSON library for Lua. 
