@@ -415,8 +415,10 @@ append_one(struct bson *bs, lua_State *L, const char *key, size_t sz) {
 				luaL_error(L,"Invalid subtype %d", subt);
 			}
 		} else {
-			size_t len;
-			const char * str = lua_tolstring(L,-1,&len);
+			if(len > 1 && str[0]==0 && str[1] == BSON_STRING){
+				len -= 2;
+				str += 2;
+			}
 			append_key(bs, BSON_STRING, key, sz);
 			int off = reserve_length(bs);
 			write_string(bs, str, len);
@@ -569,7 +571,7 @@ unpack_dict(lua_State *L, struct bson_reader *br, bool array) {
 			if (sz <= 0) {
 				luaL_error(L, "Invalid bson string , length = %d", sz);
 			}
-			lua_pushlstring(L, read_bytes(L, &t, sz), sz-1);
+			make_object(L, BSON_STRING, read_bytes(L, &t, sz), sz-1);
 			break;
 		}
 		case BSON_DOCUMENT:
@@ -1005,6 +1007,10 @@ lbinary(lua_State *L) {
 static int
 lsubtype(lua_State *L, int subtype, const uint8_t * buf, size_t sz) {
 	switch(subtype) {
+	case BSON_STRING:
+		lua_pushvalue(L, lua_upvalueindex(5));
+		lua_pushlstring(L, (const char *)buf);
+		return 2;
 	case BSON_BINARY:
 		lua_pushvalue(L, lua_upvalueindex(6));
 		lua_pushlstring(L, (const char *)buf+1, sz-1);
@@ -1104,6 +1110,7 @@ ltype(lua_State *L) {
 	case LUA_TSTRING: {
 		size_t len = 0;
 		const char * str = lua_tolstring(L,1,&len);
+		// 0 is control byte
 		if (str[0] == 0 && len >= 2) {
 			return lsubtype(L, (uint8_t)str[1], (const uint8_t *)str+2, len-2);
 		} else {
