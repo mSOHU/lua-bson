@@ -1,6 +1,9 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+// compat with lua_ngx
+#include <compat-5.2.h>
+
 #include <time.h>
 #include <unistd.h>
 
